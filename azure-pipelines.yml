@@ -5,7 +5,7 @@ trigger:
 variables:
   resourceGroupName: 'rg-bicep-palestra-tdc'
   location: 'brazilsouth'
-  azureSubscription: 'Assinatura do Visual Studio Enterprise (bca9580f-6cdf-47a5-be13-cf19189e6b94)'
+  azureSubscription: 'Sua Subscription'
   prefixName: 'tdc'
 
 pool:
