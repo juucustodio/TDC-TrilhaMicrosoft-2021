@@ -1,0 +1,55 @@
+name: Bicep-StorageAccount-PrivateEndpoint
+trigger:
+- main
+
+variables:
+  resourceGroupName: 'rg-bicep-palestra-tdc'
+  location: 'brazilsouth'
+  azureSubscription: 'Assinatura do Visual Studio Enterprise (bca9580f-6cdf-47a5-be13-cf19189e6b94)'
+  prefixName: 'tdc'
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Build
+  jobs:
+  - job: Build
+    steps:
+    - task: AzureCLI@2  
+      displayName: 'build bicep artifact' 
+      inputs: 
+        azureSubscription: $(azureSubscription) 
+        scriptType: 'pscore'  
+        scriptLocation: 'inlineScript'  
+        inlineScript: 'az bicep build --file Bicep/main.bicep'  
+
+    - task: PublishBuildArtifacts@1 
+      displayName: 'Publish artifact in pipeline' 
+      inputs: 
+        PathtoPublish: '$(Build.SourcesDirectory)/Bicep/main.json'  
+        ArtifactName: 'finishedTemplate'  
+        publishLocation: 'Container' 
+
+- stage: deploy
+  jobs:
+  - deployment: biceptoAzure
+    displayName: 'Deploy bicep to Azure'
+    environment: 'AzureDeployment'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - checkout: self
+          - task: AzureCLI@2
+            displayName: 'deploy bicep template'
+            inputs:
+              azureSubscription: $(azureSubscription) 
+              scriptType: 'pscore'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az group create --name $(ResourceGroupName) --location $(location)
+                az deployment group create  `
+                --template-file $(Build.SourcesDirectory)/Bicep/main.bicep `
+                --resource-group $(ResourceGroupName) `
+                --parameters prefixName=$(prefixName)
